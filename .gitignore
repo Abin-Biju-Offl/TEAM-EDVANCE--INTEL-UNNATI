@@ -1,0 +1,41 @@
+# Data files - NCERT PDFs (too large for GitHub)
+data/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Vector stores and embeddings
+*.faiss
+*.npy
+*.npz
+
+# Model files
+models/
+checkpoints/
+
+# Temporary files
+*.tmp
+temp/
