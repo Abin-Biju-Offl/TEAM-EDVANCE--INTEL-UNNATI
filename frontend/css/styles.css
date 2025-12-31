@@ -1,0 +1,1031 @@
+/*
+    NCERT Educational Assistant - Stylesheet
+    
+    DESIGN PHILOSOPHY:
+    - Simplicity over beauty
+    - Clarity over cleverness
+    - Trust over engagement
+    - Accessibility first
+    
+    WHY: This is a reliability-focused interface for reviewers, not a marketing demo.
+*/
+
+/* ============================================
+   RESET & BASE STYLES
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* 
+        DESIGN DECISION: Professional, trust-building color palette
+        REASON: Blue = trust/reliability, minimal colors reduce distraction
+    */
+    --primary-blue: #0066cc;
+    --primary-dark: #004499;
+    --success-green: #059669;
+    --warning-orange: #d97706;
+    --error-red: #dc2626;
+    
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    
+    --white: #ffffff;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    
+    /* 
+        DESIGN DECISION: System fonts only
+        REASON: No external dependencies, instant load, OS-native appearance
+    */
+    --font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+                   'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', 
+                 Consolas, 'Courier New', monospace;
+}
+
+body {
+    font-family: var(--font-system);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--gray-800);
+    background-color: var(--gray-50);
+    
+    /* 
+        DESIGN DECISION: Prevent horizontal scroll, optimize for mobile
+        REASON: Works on low-end devices, predictable behavior
+    */
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   LAYOUT CONTAINER
+   ============================================ */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    
+    /* 
+        DESIGN DECISION: Generous padding for readability
+        REASON: Reduces eye strain, professional appearance
+    */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================
+   HEADER & TRUST INDICATORS
+   ============================================ */
+
+.header {
+    padding: 2rem 0 1.5rem;
+    border-bottom: 2px solid var(--gray-200);
+    margin-bottom: 2rem;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.system-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    letter-spacing: -0.025em;
+}
+
+.system-subtitle {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-top: 0.25rem;
+}
+
+/* 
+    DESIGN DECISION: Prominent trust badge
+    REASON: Immediately visible, builds credibility for reviewers
+*/
+.trust-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background-color: var(--success-green);
+    color: var(--white);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-md);
+}
+
+.badge-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+}
+
+.badge-text {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+/* 
+    DESIGN DECISION: Always-visible safety banner
+    REASON: Sets expectations, discourages misuse
+*/
+.safety-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background-color: #fef3c7;
+    border-left: 4px solid var(--warning-orange);
+    border-radius: 0.375rem;
+    margin-top: 1rem;
+}
+
+.info-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--warning-orange);
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.safety-text {
+    font-size: 0.875rem;
+    color: var(--gray-800);
+    line-height: 1.5;
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+
+.main-content {
+    flex: 1;
+    padding-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   INPUT SECTION: Context Selection & Question
+   ============================================ */
+
+.input-section {
+    background-color: var(--white);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 2rem;
+}
+
+.context-panel,
+.question-panel {
+    margin-bottom: 2rem;
+}
+
+.context-panel:last-child,
+.question-panel:last-child {
+    margin-bottom: 0;
+}
+
+.context-instruction {
+    font-size: 0.9375rem;
+    color: var(--gray-700);
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: var(--gray-50);
+    border-radius: 0.375rem;
+    border-left: 3px solid var(--primary-blue);
+}
+
+/* 
+    DESIGN DECISION: Grid layout for selectors
+    REASON: Clear visual structure, responsive on all devices
+*/
+.selector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.selector-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.selector-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.required-indicator {
+    color: var(--error-red);
+    font-weight: 700;
+}
+
+/* 
+    DESIGN DECISION: Large, clear selectors with visual feedback
+    REASON: Easy to use, hard to miss, obvious when disabled
+*/
+.selector {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-family: var(--font-system);
+    color: var(--gray-900);
+    background-color: var(--white);
+    border: 2px solid var(--gray-300);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.selector:hover:not(:disabled) {
+    border-color: var(--primary-blue);
+}
+
+.selector:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.selector:disabled {
+    background-color: var(--gray-100);
+    color: var(--gray-400);
+    cursor: not-allowed;
+}
+
+/* Question input */
+.question-input-wrapper {
+    position: relative;
+    margin-bottom: 0.5rem;
+}
+
+/* 
+    DESIGN DECISION: Large textarea with clear placeholder
+    REASON: Guides users, accommodates detailed questions
+*/
+.question-input {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+    font-family: var(--font-system);
+    color: var(--gray-900);
+    background-color: var(--white);
+    border: 2px solid var(--gray-300);
+    border-radius: 0.5rem;
+    resize: vertical;
+    min-height: 120px;
+    transition: all 0.2s ease;
+}
+
+.question-input::placeholder {
+    color: var(--gray-400);
+}
+
+.question-input:hover:not(:disabled) {
+    border-color: var(--primary-blue);
+}
+
+.question-input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.question-input:disabled {
+    background-color: var(--gray-100);
+    color: var(--gray-400);
+    cursor: not-allowed;
+}
+
+.char-counter {
+    text-align: right;
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+    margin-bottom: 1rem;
+}
+
+/* 
+    DESIGN DECISION: Large, prominent submit button
+    REASON: Clear call-to-action, impossible to miss
+*/
+.submit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--white);
+    background-color: var(--primary-blue);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-md);
+}
+
+.submit-btn:hover:not(:disabled) {
+    background-color: var(--primary-dark);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+}
+
+.submit-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.submit-btn:disabled {
+    background-color: var(--gray-300);
+    color: var(--gray-500);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.submit-btn.loading {
+    background-color: var(--gray-400);
+    cursor: wait;
+}
+
+.btn-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    stroke-width: 2;
+}
+
+/* ============================================
+   ANSWER SECTION
+   ============================================ */
+
+.answer-section {
+    background-color: var(--white);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 2rem;
+}
+
+.answer-section.hidden {
+    display: none;
+}
+
+.answer-state {
+    margin-bottom: 2rem;
+}
+
+.answer-state.hidden {
+    display: none;
+}
+
+.answer-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.state-icon {
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+}
+
+.success-icon {
+    color: var(--success-green);
+}
+
+.warning-icon {
+    color: var(--warning-orange);
+}
+
+.answer-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+/* 
+    DESIGN DECISION: Clean, readable answer text
+    REASON: Professional appearance, easy to read on all devices
+*/
+.answer-content {
+    margin-bottom: 2rem;
+}
+
+.answer-text {
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: var(--gray-800);
+}
+
+.answer-text p {
+    margin-bottom: 1rem;
+}
+
+.answer-text p:last-child {
+    margin-bottom: 0;
+}
+
+/* 
+    DESIGN DECISION: Citations always visible, prominently displayed
+    REASON: Critical for transparency, builds trust
+*/
+.citations-section {
+    background-color: var(--gray-50);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    border: 2px solid var(--gray-200);
+}
+
+.citations-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 1rem;
+}
+
+.citation-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--primary-blue);
+}
+
+.citations-list {
+    margin-bottom: 1rem;
+}
+
+.citation-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background-color: var(--white);
+    border-radius: 0.375rem;
+    border-left: 3px solid var(--primary-blue);
+    margin-bottom: 0.75rem;
+}
+
+.citation-item:last-child {
+    margin-bottom: 0;
+}
+
+.citation-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    background-color: var(--primary-blue);
+    color: var(--white);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.citation-text {
+    flex: 1;
+    font-size: 0.9375rem;
+    color: var(--gray-700);
+    line-height: 1.5;
+}
+
+.citation-text strong {
+    color: var(--gray-900);
+}
+
+/* 
+    DESIGN DECISION: Plain-language grounding indicator
+    REASON: Builds trust without technical jargon
+*/
+.grounding-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: var(--white);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.grounding-label {
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.grounding-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
+.grounding-status.high {
+    background-color: #d1fae5;
+    color: var(--success-green);
+}
+
+.grounding-status.medium {
+    background-color: #fef3c7;
+    color: var(--warning-orange);
+}
+
+.grounding-status.verified {
+    background-color: #dbeafe;
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   REJECTION STATE
+   ============================================ */
+
+.rejection-content {
+    padding: 1rem;
+}
+
+/* 
+    DESIGN DECISION: Clear, professional rejection message
+    REASON: Maintains trust while explaining limitation
+*/
+.rejection-message {
+    font-size: 1.125rem;
+    color: var(--gray-900);
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: #fef3c7;
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--warning-orange);
+}
+
+.rejection-explanation {
+    font-size: 0.9375rem;
+    color: var(--gray-700);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.rejection-guidance {
+    background-color: var(--gray-50);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.guidance-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 0.75rem;
+}
+
+.guidance-list {
+    list-style-position: inside;
+    margin-bottom: 1rem;
+    color: var(--gray-700);
+    font-size: 0.9375rem;
+    line-height: 1.8;
+}
+
+.guidance-suggestion {
+    font-size: 0.9375rem;
+    color: var(--gray-700);
+    padding: 0.75rem;
+    background-color: var(--white);
+    border-radius: 0.375rem;
+    border-left: 3px solid var(--primary-blue);
+}
+
+/* ============================================
+   FEEDBACK SECTION
+   ============================================ */
+
+.feedback-section {
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--gray-200);
+}
+
+.feedback-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 0.75rem;
+}
+
+.feedback-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* 
+    DESIGN DECISION: Clear thumbs up/down buttons
+    REASON: Universal feedback mechanism, easy to understand
+*/
+.feedback-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    background-color: var(--white);
+    border: 2px solid var(--gray-300);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.feedback-btn:hover {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+.feedback-btn.active {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: var(--white);
+}
+
+.feedback-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.feedback-text-container {
+    margin-top: 1rem;
+}
+
+.feedback-text-container.hidden {
+    display: none;
+}
+
+.feedback-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.feedback-text {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 0.9375rem;
+    font-family: var(--font-system);
+    color: var(--gray-900);
+    background-color: var(--white);
+    border: 2px solid var(--gray-300);
+    border-radius: 0.375rem;
+    resize: vertical;
+    margin-bottom: 0.75rem;
+}
+
+.feedback-text:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.feedback-submit-btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--white);
+    background-color: var(--primary-blue);
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.feedback-submit-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+.feedback-confirmation {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: #d1fae5;
+    color: var(--success-green);
+    border-radius: 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+.feedback-confirmation.hidden {
+    display: none;
+}
+
+/* ============================================
+   ANSWER ACTIONS
+   ============================================ */
+
+.answer-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.secondary-btn {
+    color: var(--primary-blue);
+    background-color: var(--white);
+    border: 2px solid var(--primary-blue);
+}
+
+.secondary-btn:hover {
+    background-color: var(--primary-blue);
+    color: var(--white);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.footer {
+    padding: 2rem 0;
+    margin-top: auto;
+    border-top: 2px solid var(--gray-200);
+}
+
+.footer-content {
+    text-align: center;
+}
+
+.footer-text {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+}
+
+.footer-disclaimer {
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   LOADING OVERLAY
+   ============================================ */
+
+/* 
+    DESIGN DECISION: Full-screen loading overlay
+    REASON: Prevents interaction during API calls, clear feedback
+*/
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-overlay.hidden {
+    display: none;
+}
+
+.loading-spinner {
+    background-color: var(--white);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+}
+
+/* 
+    DESIGN DECISION: Simple CSS spinner, no images
+    REASON: No external dependencies, works offline
+*/
+.spinner {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1rem;
+    border: 4px solid var(--gray-200);
+    border-top: 4px solid var(--primary-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 0.5rem;
+}
+
+.loading-subtext {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.hidden {
+    display: none !important;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* 
+    DESIGN DECISION: Mobile-first responsive design
+    REASON: Works on low-end devices, progressive enhancement
+*/
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .trust-badge {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .selector-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .input-section,
+    .answer-section {
+        padding: 1.5rem;
+    }
+    
+    .system-title {
+        font-size: 1.5rem;
+    }
+    
+    .feedback-buttons {
+        flex-direction: column;
+    }
+    
+    .feedback-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+    
+    .input-section,
+    .answer-section {
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+    
+    .system-title {
+        font-size: 1.25rem;
+    }
+    
+    .submit-btn {
+        font-size: 1rem;
+        padding: 0.875rem 1.5rem;
+    }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+/* 
+    DESIGN DECISION: Clean print output with citations
+    REASON: Students may want to print answers for study
+*/
+@media print {
+    .header,
+    .footer,
+    .feedback-section,
+    .answer-actions,
+    .loading-overlay {
+        display: none;
+    }
+    
+    .answer-section {
+        box-shadow: none;
+        border: 1px solid var(--gray-300);
+    }
+    
+    body {
+        background-color: var(--white);
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================ */
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+    outline: 3px solid var(--primary-blue);
+    outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --gray-300: #999999;
+        --gray-400: #666666;
+    }
+    
+    .selector,
+    .question-input,
+    .feedback-btn {
+        border-width: 3px;
+    }
+}

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCERT Educational Assistant | Intel Unnati</title>
+    
+    <!-- 
+        DESIGN DECISION: No heavy frameworks or external dependencies
+        REASON: Ensures compatibility with low-end systems and faster load times
+    -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="js/app.js" as="script">
+    <link rel="preload" href="js/api.js" as="script">
+</head>
+<body>
+    <!-- 
+        DESIGN DECISION: Single-page layout with clear visual hierarchy
+        REASON: Reduces cognitive load, makes safety messaging prominent
+    -->
+    
+    <div class="container">
+        <!-- Header: System Identity & Trust Indicators -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1 class="system-title">NCERT Educational Assistant</h1>
+                    <p class="system-subtitle">Intel Unnati Industrial Training Project</p>
+                </div>
+                
+                <!-- 
+                    DESIGN DECISION: Prominent safety badge
+                    REASON: Immediately communicates system reliability to reviewers
+                -->
+                <div class="trust-badge">
+                    <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/>
+                    </svg>
+                    <span class="badge-text">NCERT Verified Content Only</span>
+                </div>
+            </div>
+            
+            <!-- 
+                DESIGN DECISION: Always-visible safety disclaimer
+                REASON: Sets correct expectations, discourages misuse
+            -->
+            <div class="safety-banner">
+                <svg class="info-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p class="safety-text">
+                    Answers are generated <strong>strictly from NCERT textbooks only</strong>. 
+                    Questions outside the NCERT curriculum will be declined.
+                </p>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- 
+                DESIGN DECISION: Mandatory selectors before question input
+                REASON: Forces context specification, improves answer accuracy
+            -->
+            <section class="input-section">
+                <h2 class="section-title">Ask Your Question</h2>
+                
+                <!-- Context Selection Panel -->
+                <div class="context-panel">
+                    <p class="context-instruction">
+                        <strong>Step 1:</strong> Select your textbook details (all fields are mandatory)
+                    </p>
+                    
+                    <div class="selector-grid">
+                        <!-- 
+                            DESIGN DECISION: Large, clear selectors with visual hierarchy
+                            REASON: Prevents user error, makes selection obvious
+                        -->
+                        <div class="selector-group">
+                            <label for="class-select" class="selector-label">
+                                <span class="label-text">Class</span>
+                                <span class="required-indicator">*</span>
+                            </label>
+                            <select id="class-select" class="selector" required aria-required="true">
+                                <option value="" disabled selected>Select Class</option>
+                                <option value="5">Class 5</option>
+                                <option value="6">Class 6</option>
+                                <option value="7">Class 7</option>
+                                <option value="8">Class 8</option>
+                                <option value="9">Class 9</option>
+                                <option value="10">Class 10</option>
+                            </select>
+                        </div>
+
+                        <div class="selector-group">
+                            <label for="subject-select" class="selector-label">
+                                <span class="label-text">Subject</span>
+                                <span class="required-indicator">*</span>
+                            </label>
+                            <select id="subject-select" class="selector" required aria-required="true" disabled>
+                                <option value="" disabled selected>Select Subject</option>
+                                <!-- Subjects populated dynamically based on class -->
+                            </select>
+                        </div>
+
+                        <div class="selector-group">
+                            <label for="language-select" class="selector-label">
+                                <span class="label-text">Language</span>
+                                <span class="required-indicator">*</span>
+                            </label>
+                            <select id="language-select" class="selector" required aria-required="true">
+                                <option value="" disabled selected>Select Language</option>
+                                <option value="en">English</option>
+                                <option value="hi">हिन्दी (Hindi)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question Input Panel -->
+                <div class="question-panel">
+                    <p class="context-instruction">
+                        <strong>Step 2:</strong> Ask your question
+                    </p>
+                    
+                    <!-- 
+                        DESIGN DECISION: Prominent placeholder with clear guidance
+                        REASON: Guides users toward appropriate questions
+                    -->
+                    <div class="question-input-wrapper">
+                        <label for="question-input" class="visually-hidden">Your Question</label>
+                        <textarea 
+                            id="question-input" 
+                            class="question-input" 
+                            rows="4" 
+                            placeholder="Ask a question strictly from your NCERT textbook (e.g., 'What is photosynthesis?' or 'Explain Pythagoras theorem')"
+                            maxlength="500"
+                            disabled
+                            aria-label="Question input"
+                        ></textarea>
+                        <div class="char-counter">
+                            <span id="char-count">0</span> / 500 characters
+                        </div>
+                    </div>
+
+                    <!-- 
+                        DESIGN DECISION: Large, obvious submit button with loading state
+                        REASON: Clear call-to-action, prevents double submissions
+                    -->
+                    <button id="submit-btn" class="submit-btn" disabled>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-width="2"/>
+                        </svg>
+                        <span id="btn-text">Get Answer</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 
+                DESIGN DECISION: Answer section hidden until response received
+                REASON: Prevents confusion, clear state management
+            -->
+            <section id="answer-section" class="answer-section hidden">
+                <!-- Success State: Citation-backed Answer -->
+                <div id="success-state" class="answer-state hidden">
+                    <div class="answer-header">
+                        <svg class="state-icon success-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <h3 class="answer-title">Answer from NCERT Textbook</h3>
+                    </div>
+
+                    <!-- 
+                        DESIGN DECISION: Answer text with clear typography
+                        REASON: Readability, professional appearance
+                    -->
+                    <div class="answer-content">
+                        <div id="answer-text" class="answer-text"></div>
+                    </div>
+
+                    <!-- 
+                        DESIGN DECISION: Citations always visible, not collapsible
+                        REASON: Critical for transparency and verification
+                    -->
+                    <div class="citations-section">
+                        <h4 class="citations-title">
+                            <svg class="citation-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                            </svg>
+                            Source Citations
+                        </h4>
+                        <div id="citations-list" class="citations-list"></div>
+                        
+                        <!-- 
+                            DESIGN DECISION: Grounding indicator in plain language
+                            REASON: Builds trust without overwhelming with technical metrics
+                        -->
+                        <div class="grounding-indicator">
+                            <span class="grounding-label">Answer Reliability:</span>
+                            <span id="grounding-status" class="grounding-status"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rejection State: "I don't know" -->
+                <div id="rejection-state" class="answer-state hidden">
+                    <div class="answer-header">
+                        <svg class="state-icon warning-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <h3 class="answer-title">Unable to Answer</h3>
+                    </div>
+
+                    <!-- 
+                        DESIGN DECISION: Professional, informative rejection message
+                        REASON: Maintains user trust while explaining limitation
+                    -->
+                    <div class="rejection-content">
+                        <p class="rejection-message">
+                            <strong>I don't know based on NCERT textbooks.</strong>
+                        </p>
+                        <p class="rejection-explanation" id="rejection-reason"></p>
+                        
+                        <div class="rejection-guidance">
+                            <h4 class="guidance-title">This can happen if:</h4>
+                            <ul class="guidance-list">
+                                <li>Your question is not covered in the selected NCERT textbook</li>
+                                <li>The topic is from a different class or subject</li>
+                                <li>The question requires information beyond NCERT curriculum</li>
+                            </ul>
+                            <p class="guidance-suggestion">
+                                <strong>Try:</strong> Rephrasing your question or checking if you've selected the correct class and subject.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 
+                    DESIGN DECISION: Feedback section always shown with answer
+                    REASON: Collects evaluation data without being intrusive
+                -->
+                <div class="feedback-section">
+                    <h4 class="feedback-title">Was this answer helpful?</h4>
+                    <div class="feedback-buttons">
+                        <button id="feedback-positive" class="feedback-btn" data-feedback="positive" aria-label="Answer was helpful">
+                            <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" stroke-width="2"/>
+                            </svg>
+                            <span>Yes</span>
+                        </button>
+                        <button id="feedback-negative" class="feedback-btn" data-feedback="negative" aria-label="Answer was not helpful">
+                            <svg class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3zm7-13h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17" stroke-width="2"/>
+                            </svg>
+                            <span>No</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Optional text feedback (shown after button click) -->
+                    <div id="feedback-text-container" class="feedback-text-container hidden">
+                        <label for="feedback-text" class="feedback-label">
+                            Tell us more (optional):
+                        </label>
+                        <textarea 
+                            id="feedback-text" 
+                            class="feedback-text" 
+                            rows="3" 
+                            maxlength="200"
+                            placeholder="Your feedback helps us improve..."
+                        ></textarea>
+                        <button id="feedback-submit" class="feedback-submit-btn">Submit Feedback</button>
+                    </div>
+
+                    <div id="feedback-confirmation" class="feedback-confirmation hidden">
+                        ✓ Thank you for your feedback!
+                    </div>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="answer-actions">
+                    <button id="new-question-btn" class="action-btn secondary-btn">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M12 4v16m8-8H4" stroke-width="2"/>
+                        </svg>
+                        Ask Another Question
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p class="footer-text">
+                    <strong>Intel Unnati Industrial Training Project</strong> | 
+                    Team EDVANCE | 
+                    December 2025
+                </p>
+                <p class="footer-disclaimer">
+                    This system provides answers based solely on NCERT textbook content. 
+                    It does not provide exam answers, paper leaks, or general knowledge outside the curriculum.
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 
+        DESIGN DECISION: Loading overlay for API calls
+        REASON: Clear feedback during processing, prevents interaction during loading
+    -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p class="loading-text">Processing your question...</p>
+            <p class="loading-subtext">Searching NCERT textbooks</p>
+        </div>
+    </div>
+
+    <!-- 
+        DESIGN DECISION: Modular JavaScript with clear separation of concerns
+        REASON: Maintainable, testable, auditable code structure
+    -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
