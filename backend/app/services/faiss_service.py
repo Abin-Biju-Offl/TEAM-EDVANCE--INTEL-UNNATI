@@ -26,8 +26,13 @@ class FAISSService:
         self.nlist = settings.faiss_nlist
         self.nprobe = settings.faiss_nprobe
         
+        # Support for multiple language indexes
+        self.indexes = {}  # {'en': index, 'hi': index}
+        self.chunks_by_lang = {}  # {'en': chunks, 'hi': chunks}
+        
+        # Legacy support (defaults to English)
         self.index = None
-        self.chunks = []  # Store chunk metadata
+        self.chunks = []
         
         # Setup Intel MKL for better CPU performance
         self._setup_mkl()
@@ -100,18 +105,27 @@ class FAISSService:
             f"type={self.index_type}"
         )
     
-    def search(self, query_embedding: np.ndarray, k: int = 20) -> List[Dict]:
+    def search(self, query_embedding: np.ndarray, k: int = 20, language: str = 'en') -> List[Dict]:
         """
         Search FAISS index
         
         Args:
             query_embedding: Query vector (D,)
             k: Number of results to return
+            language: Language of the index to search ('en' or 'hi')
             
         Returns:
             List of retrieved chunks with scores
         """
-        if self.index is None:
+        # Try to use language-specific index first
+        if language in self.indexes:
+            index = self.indexes[language]
+            chunks = self.chunks_by_lang[language]
+        elif self.index is not None:
+            # Fallback to legacy index
+            index = self.index
+            chunks = self.chunks
+        else:
             raise ValueError("FAISS index not initialized")
         
         # Normalize query
@@ -119,13 +133,13 @@ class FAISSService:
         faiss.normalize_L2(query)
         
         # Search
-        distances, indices = self.index.search(query, k)
+        distances, indices = index.search(query, k)
         
         # Convert to results
         results = []
         for idx, distance in zip(indices[0], distances[0]):
-            if idx < len(self.chunks):
-                chunk = self.chunks[idx].copy()
+            if idx < len(chunks):
+                chunk = chunks[idx].copy()
                 chunk['score'] = float(1 / (1 + distance))  # Convert distance to similarity
                 chunk['distance'] = float(distance)
                 results.append(chunk)
@@ -226,6 +240,46 @@ class FAISSService:
         
         return (Path(str(index_path) + ".index").exists() and
                 Path(str(index_path) + ".chunks.pkl").exists())
+    
+    def load_index_for_language(self, language: str) -> bool:
+        """Load FAISS index for specific language"""
+        if language == 'en':
+            index_path = Path(settings.vector_store_dir) / "faiss_index"
+        elif language == 'hi':
+            index_path = Path(settings.vector_store_dir) / "hindi_faiss_index"
+        else:
+            logger.warning(f"Unsupported language: {language}")
+            return False
+        
+        if not self.index_exists(str(index_path)):
+            logger.warning(f"Index not found for language '{language}' at {index_path}")
+            return False
+        
+        try:
+            # Load index files
+            index = faiss.read_index(str(index_path) + ".index")
+            
+            with open(str(index_path) + ".chunks.pkl", 'rb') as f:
+                chunks = pickle.load(f)
+            
+            # Set nprobe if IVF index
+            if isinstance(index, faiss.IndexIVFFlat):
+                index.nprobe = min(self.nprobe, getattr(index, 'nlist', self.nlist))
+            
+            self.indexes[language] = index
+            self.chunks_by_lang[language] = chunks
+            
+            # Update legacy attributes for backward compatibility (use English by default)
+            if language == 'en' or not self.index:
+                self.index = index
+                self.chunks = chunks
+            
+            logger.success(f"Loaded '{language}' index: {len(chunks)} chunks")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to load '{language}' index: {e}")
+            return False
 
 
 # Global FAISS service instance

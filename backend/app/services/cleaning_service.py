@@ -185,6 +185,113 @@ class TextCleaningService:
         )
         
         return result
+    
+    def clean_hindi_text(self, text: str) -> str:
+        """
+        Clean Hindi OCR text while preserving Devanagari characters
+        
+        Args:
+            text: Raw Hindi OCR text
+            
+        Returns:
+            Cleaned Hindi text
+        """
+        if not text:
+            return ""
+        
+        cleaned = text
+        
+        # Convert Devanagari numbers to Arabic numbers
+        # ० १ २ ३ ४ ५ ६ ७ ८ ९ -> 0 1 2 3 4 5 6 7 8 9
+        devanagari_to_arabic = str.maketrans('०१२३४५६७८९', '0123456789')
+        cleaned = cleaned.translate(devanagari_to_arabic)
+        
+        # Remove excessive whitespace while preserving Devanagari
+        cleaned = re.sub(r'[ \t]{3,}', ' ', cleaned)  # Multiple spaces/tabs
+        cleaned = re.sub(r'\n{4,}', '\n\n\n', cleaned)  # Excessive newlines
+        
+        # Remove common OCR artifacts (but preserve Devanagari characters)
+        # Remove standalone special characters that are OCR noise
+        cleaned = re.sub(r'\[\s*\]', '', cleaned)  # Empty brackets
+        cleaned = re.sub(r'\(\s*\)', '', cleaned)  # Empty parentheses
+        cleaned = re.sub(r'_{3,}', '', cleaned)  # Multiple underscores
+        
+        # Remove page headers/footers patterns (common in NCERT PDFs)
+        # Pattern: single digit or Roman numeral on its own line
+        cleaned = re.sub(r'^\s*\d+\s*$', '', cleaned, flags=re.MULTILINE)
+        cleaned = re.sub(r'^\s*[ivxlcdm]+\s*$', '', cleaned, flags=re.MULTILINE)
+        
+        # Normalize whitespace (but keep paragraph breaks)
+        cleaned = re.sub(r' +', ' ', cleaned)  # Multiple spaces to single
+        cleaned = re.sub(r'\n ', '\n', cleaned)  # Remove space after newline
+        cleaned = re.sub(r' \n', '\n', cleaned)  # Remove space before newline
+        
+        # Remove leading/trailing whitespace
+        cleaned = cleaned.strip()
+        
+        return cleaned
+    
+    def process_hindi_document(self, ocr_result: Dict) -> Dict:
+        """
+        Process Hindi OCR document with Devanagari preservation
+        
+        Args:
+            ocr_result: Hindi OCR result dictionary
+            
+        Returns:
+            Processed document with cleaned Hindi text and metadata
+        """
+        logger.info(f"Cleaning Hindi document: {ocr_result.get('pdf_path', 'unknown')}")
+        
+        # Clean Hindi text with Devanagari preservation
+        cleaned_text = self.clean_hindi_text(ocr_result.get('full_text', ''))
+        
+        # Extract basic metadata from filename
+        # Format: jhsc101.pdf -> Chapter 1 (Hindi Science)
+        # Format: jhss*.pdf -> Social Science (Hindi)
+        filename = ocr_result.get('pdf_path', '')
+        metadata = {
+            'chapter': ocr_result.get('chapter', None),
+            'language': 'hindi',
+            'class': '10',
+            'filename': filename
+        }
+        
+        # Detect subject from filename
+        if 'jhsc' in filename.lower():
+            metadata['subject'] = 'Science'
+        elif 'jhss' in filename.lower():
+            metadata['subject'] = 'Social Science'
+        else:
+            metadata['subject'] = 'Unknown'
+        
+        # Preserve page information
+        if 'pages' in ocr_result:
+            metadata['pages'] = ocr_result['pages']
+        
+        # Count Devanagari characters for quality check
+        devanagari_count = sum(1 for char in cleaned_text if '\u0900' <= char <= '\u097F')
+        total_chars = len(cleaned_text)
+        devanagari_percentage = (devanagari_count / total_chars * 100) if total_chars > 0 else 0
+        
+        result = {
+            'original_text': ocr_result.get('full_text', ''),
+            'cleaned_text': cleaned_text,
+            'metadata': metadata,
+            'char_count_original': len(ocr_result.get('full_text', '')),
+            'char_count_cleaned': len(cleaned_text),
+            'devanagari_chars': devanagari_count,
+            'devanagari_percentage': round(devanagari_percentage, 1),
+            'total_pages': ocr_result.get('total_pages', 0)
+        }
+        
+        logger.success(
+            f"Cleaned Hindi {filename}: "
+            f"{result['char_count_original']} -> {result['char_count_cleaned']} chars "
+            f"({result['devanagari_percentage']}% Devanagari)"
+        )
+        
+        return result
 
 
 # Global cleaning service instance

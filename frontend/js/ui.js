@@ -297,18 +297,33 @@ const UI = {
         }
         
         /*
+            DESIGN DECISION: Deduplicate citations client-side as safety measure
+            REASON: Prevent showing same citation multiple times
+        */
+        const uniqueCitations = [];
+        const seen = new Set();
+        
+        for (const citation of citations) {
+            const key = `${citation.class}-${citation.subject}-${citation.chapter}-${citation.page}`;
+            if (!seen.has(key)) {
+                uniqueCitations.push(citation);
+                seen.add(key);
+            }
+        }
+        
+        /*
             DESIGN DECISION: Numbered list with full citation details
             REASON: Easy to reference, complete source information
         */
-        this.elements.citationsList.innerHTML = citations.map((citation, index) => `
+        this.elements.citationsList.innerHTML = uniqueCitations.map((citation, index) => `
             <div class="citation-item">
                 <span class="citation-number">${index + 1}</span>
                 <span class="citation-text">
                     <strong>NCERT Class ${this._escapeHtml(citation.class)}</strong>, 
                     ${this._escapeHtml(citation.subject)}, 
-                    Chapter ${this._escapeHtml(citation.chapter)}, 
+                    ${this._escapeHtml(citation.chapter)}, 
                     Page ${this._escapeHtml(citation.page)}
-                    ${citation.section ? ` (${this._escapeHtml(citation.section)})` : ''}
+                    ${citation.section ? ` - ${this._escapeHtml(citation.section)}` : ''}
                 </span>
             </div>
         `).join('');

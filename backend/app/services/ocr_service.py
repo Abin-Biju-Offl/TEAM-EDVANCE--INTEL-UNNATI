@@ -6,13 +6,14 @@ Integrates existing OCR pipeline code.
 """
 
 import pytesseract
-from pdf2image import convert_from_path
+import fitz  # PyMuPDF
 from PIL import Image
 from pathlib import Path
 from typing import List, Dict
 from loguru import logger
 import os
 import re
+import io
 
 from app.core.config import settings
 
@@ -192,7 +193,97 @@ class OCRService:
         
         logger.info(f"Processed {len(results)} PDFs successfully")
         return results
+    
+    def process_pdf_with_hindi(self, pdf_path: str) -> Dict[str, any]:
+        """
+        Extract text from Hindi PDF using OCR with Hindi language model
+        
+        Args:
+            pdf_path: Path to Hindi PDF file
+            
+        Returns:
+            Dictionary with extracted text and metadata
+        """
+        logger.info(f"Starting Hindi OCR for: {pdf_path}")
+        
+        try:
+            # Open PDF with PyMuPDF
+            doc = fitz.open(pdf_path)
+            logger.info(f"Opened PDF with {len(doc)} pages")
+            
+            # Use lower DPI for faster processing (150 DPI balances speed and quality)
+            fast_dpi = 150
+            
+            # Extract text from each page using Hindi model
+            pages_text = []
+            for page_num in range(len(doc)):
+                try:
+                    # Get page
+                    page = doc[page_num]
+                    
+                    # Render page to image at 150 DPI (faster than 300 DPI)
+                    zoom = fast_dpi / 72  # 72 DPI is default
+                    mat = fitz.Matrix(zoom, zoom)
+                    pix = page.get_pixmap(matrix=mat)
+                    
+                    # Convert pixmap to PIL Image (faster method)
+                    image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    
+                    # Run OCR with Hindi language model
+                    text = pytesseract.image_to_string(
+                        image,
+                        lang='hin'  # Hindi language model
+                    )
+                    
+                    # Extract page number
+                    extracted_page_num = self._extract_page_number_from_text(text)
+                    
+                    pages_text.append({
+                        'page_number': page_num + 1,
+                        'pdf_page_number': extracted_page_num,
+                        'text': text,
+                        'char_count': len(text)
+                    })
+                    
+                    logger.debug(f"Page {page_num + 1}: Extracted {len(text)} characters (Hindi)")
+                    
+                except Exception as e:
+                    logger.error(f"Hindi OCR failed for page {page_num + 1}: {str(e)}")
+                    pages_text.append({
+                        'page_number': page_num + 1,
+                        'text': '',
+                        'error': str(e)
+                    })
+            
+            # Close document
+            doc.close()
+            
+            # Combine all pages
+            full_text = "\n\n".join([p['text'] for p in pages_text if p.get('text')])
+            
+            # Extract chapter from filename
+            filename = Path(pdf_path).stem
+            chapter = self._extract_chapter_from_filename(filename)
+            
+            result = {
+                'pdf_path': pdf_path,
+                'total_pages': len(pages_text),
+                'total_characters': len(full_text),
+                'full_text': full_text,
+                'pages': pages_text,
+                'chapter': chapter,
+                'language': 'hindi'
+            }
+            
+            logger.success(f"Hindi OCR completed: {filename} - {len(full_text)} chars from {len(pages_text)} pages")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Hindi OCR failed for {pdf_path}: {str(e)}")
+            raise
 
 
 # Global OCR service instance
 ocr_service = OCRService()
+

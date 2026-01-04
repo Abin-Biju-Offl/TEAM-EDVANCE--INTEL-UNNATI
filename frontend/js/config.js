@@ -21,7 +21,7 @@ const CONFIG = {
         '7': ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science'],
         '8': ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science'],
         '9': ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science'],
-        '10': ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science']
+        '10': ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science', 'Health and Physical Science']
     },
     
     // Multilingual UI text

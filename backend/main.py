@@ -81,7 +81,7 @@ async def shutdown_event():
 async def health_check():
     """Health check endpoint"""
     from app.services.faiss_service import faiss_service
-    from app.services.grok_service import groq_service
+    from app.services.groq_service import groq_service
     
     # Check LLM status
     if groq_service.is_available():

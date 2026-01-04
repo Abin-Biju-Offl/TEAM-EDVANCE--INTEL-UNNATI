@@ -16,7 +16,7 @@ from app.models.schemas import (
 from app.services.embedding_service import embedding_service
 from app.services.faiss_service import faiss_service
 from app.services.safety_service import safety_service, RejectionReason
-from app.services.grok_service import groq_service
+from app.services.groq_service import groq_service
 from app.core.config import settings
 import os
 
@@ -70,15 +70,60 @@ class PipelineService:
 
         meta = top.get("metadata", {}) or {}
         
-        # Use enhanced metadata if available (from Phase 1 improvements)
-        primary_page = top.get('primary_page') or meta.get("page", "Unknown")
+        # Get accurate page information from pages array
+        pages = meta.get("pages", [])
+        if pages and len(pages) > 0:
+            primary_page = str(pages[0].get("page_number", "Unknown"))
+            # Build page range if multiple pages
+            if len(pages) > 1:
+                last_page = pages[-1].get("page_number")
+                if last_page and last_page != pages[0].get("page_number"):
+                    primary_page = f"{primary_page}-{last_page}"
+        else:
+            primary_page = str(top.get('primary_page') or meta.get("page", "Unknown"))
+        
+        # Map filename prefix to correct subject name
+        filename = meta.get("filename", "")
+        correct_subject = subject
+        
+        if filename:
+            if 'jehp' in filename.lower():
+                correct_subject = "Health and Physical Science"
+            elif 'jemh' in filename.lower():
+                correct_subject = "Mathematics"
+            elif 'jeff' in filename.lower():
+                correct_subject = "English"
+            elif 'jesc' in filename.lower():
+                correct_subject = "Science"
+            elif 'jess' in filename.lower():
+                correct_subject = "Social Science"
+            else:
+                correct_subject = str(meta.get("subject", subject))
+        
+        # Get chapter - avoid duplication
+        chapter_from_meta = meta.get("chapter")
+        if chapter_from_meta and chapter_from_meta != "Unknown" and str(chapter_from_meta).strip():
+            chapter = str(chapter_from_meta)
+            if not chapter.lower().startswith('chapter'):
+                chapter = f"Chapter {chapter}"
+        elif filename:
+            import re
+            match = re.search(r'(jehp|jemh|jeff|jesc|jess)(\\d+)', filename)
+            if match:
+                chapter_num = str(int(match.group(2)) % 100)
+                chapter = f"Chapter {chapter_num}" if chapter_num != "0" else "Introduction"
+            else:
+                chapter = "Chapter Unknown"
+        else:
+            chapter = "Chapter Unknown"
+        
         content_type = top.get('content_type', 'explanation')
         
         citation = Citation(
             class_number=str(meta.get("class", class_num)),
-            subject=str(meta.get("subject", subject)),
-            chapter=str(meta.get("chapter", "Unknown")),
-            page=str(primary_page),
+            subject=correct_subject,
+            chapter=chapter,
+            page=primary_page,
             section=meta.get("section"),
         )
         
@@ -88,6 +133,48 @@ class PipelineService:
         # Since we are directly quoting the retrieved text, grounding is high.
         grounding_score = 0.9
         return answer, [citation], grounding_score
+    
+    def _validate_subject_match(
+        self,
+        chunks: List[Dict],
+        expected_subject: str,
+        class_num: int
+    ) -> None:
+        """
+        Validate that retrieved chunks match the selected subject
+        
+        Raises RejectionResponse if mismatch detected
+        """
+        if not chunks:
+            return
+        
+        # Map expected subject to filename prefixes
+        subject_to_prefix = {
+            "Health and Physical Science": "jehp",
+            "Mathematics": "jemh",
+            "English": "jeff",
+            "Science": "jesc",
+            "Social Science": "jess"
+        }
+        
+        expected_prefix = subject_to_prefix.get(expected_subject)
+        
+        # Check top 3 chunks for subject match
+        mismatched = 0
+        for chunk in chunks[:3]:
+            meta = chunk.get("metadata", {}) or {}
+            filename = meta.get("filename", "").lower()
+            
+            if expected_prefix and expected_prefix not in filename:
+                mismatched += 1
+        
+        # If majority of top chunks don't match, reject
+        if mismatched >= 2:  # 2 out of 3
+            logger.warning(f"Subject mismatch: Expected {expected_subject}, but retrieved content from different subject")
+            raise ValueError(
+                f"Your question does not appear to be related to {expected_subject}. "
+                f"Please ensure your question is about the selected subject, or choose the correct subject from the dropdown."
+            )
     
     async def process_query(self, query: QueryRequest) -> Union[SuccessResponse, RejectionResponse]:
         """
@@ -123,6 +210,21 @@ class PipelineService:
             if retrieved_chunks:
                 top_score = retrieved_chunks[0].get('score', 0)
                 logger.info(f"Retrieved {len(retrieved_chunks)} chunks, top score: {top_score:.3f}")
+            
+            # Check if retrieved content matches the selected subject
+            try:
+                if retrieved_chunks:
+                    self._validate_subject_match(retrieved_chunks, query.subject, query.class_number)
+            except ValueError as e:
+                logger.warning(f"Subject validation failed: {str(e)}")
+                return RejectionResponse(
+                    reason=str(e),
+                    rejection_type=RejectionReason.OFF_TOPIC.value,
+                    metadata={
+                        "stage": "subject_validation",
+                        "expected_subject": query.subject
+                    }
+                )
             
             # Step 3: Safety checks
             logger.debug("Step 3: Safety checks")

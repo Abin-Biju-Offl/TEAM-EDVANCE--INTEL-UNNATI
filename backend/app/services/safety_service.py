@@ -117,8 +117,10 @@ class SafetyMechanismService:
                 score=0.0
             )
         
-        # Calculate average confidence
-        scores = [chunk.get('score', 0.0) for chunk in chunks]
+        # Calculate average confidence from top 5 chunks only
+        # (Considering all 30 chunks unfairly lowers the average)
+        top_chunks = chunks[:5]
+        scores = [chunk.get('score', 0.0) for chunk in top_chunks]
         avg_confidence = sum(scores) / len(scores) if scores else 0.0
         
         if avg_confidence < self.min_retrieval_confidence:
