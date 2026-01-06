@@ -208,7 +208,6 @@ Please provide a detailed, clear explanation that's easy for students to underst
         
         # Map filename prefix to correct subject name
         filename = meta.get("filename", "")
-        import re
         correct_subject = subject  # Use query subject as default
         
         if filename:

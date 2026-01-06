@@ -6,6 +6,7 @@ Integrates all phases: Retrieval -> Generation -> Safety Checks
 """
 
 from typing import Union, List, Dict, Tuple
+from pathlib import Path
 from loguru import logger
 import re
 
@@ -107,7 +108,6 @@ class PipelineService:
             if not chapter.lower().startswith('chapter'):
                 chapter = f"Chapter {chapter}"
         elif filename:
-            import re
             match = re.search(r'(jehp|jemh|jeff|jesc|jess)(\\d+)', filename)
             if match:
                 chapter_num = str(int(match.group(2)) % 100)
@@ -148,14 +148,39 @@ class PipelineService:
         if not chunks:
             return
         
-        # Map expected subject to filename prefixes
-        subject_to_prefix = {
+        # Special case: Class 10 uses all-subjects indices
+        # When user selects "Hindi" or "English" as subject, they actually mean the language
+        # The index contains all subjects in that language, so skip validation
+        if class_num == 10 and expected_subject in ["Hindi", "English"]:
+            # Skip validation for Class 10 when using language-based all-subjects index
+            return
+        
+        # Map expected subject to filename prefixes by class
+        # Class 10 prefixes
+        class_10_prefixes = {
             "Health and Physical Science": "jehp",
             "Mathematics": "jemh",
-            "English": "jeff",
             "Science": "jesc",
             "Social Science": "jess"
         }
+        
+        # Class 5 prefixes
+        class_5_prefixes = {
+            "English": "eesa",
+            "Hindi": "ehve",
+            "Mathematics": "eemm",
+            "Physical Education": "eeky",
+            "Urdu": "eust"
+        }
+        
+        # Select prefix map based on class
+        if class_num == 5:
+            subject_to_prefix = class_5_prefixes
+        elif class_num == 10:
+            subject_to_prefix = class_10_prefixes
+        else:
+            # For other classes, check metadata directly
+            subject_to_prefix = {}
         
         expected_prefix = subject_to_prefix.get(expected_subject)
         
@@ -163,10 +188,17 @@ class PipelineService:
         mismatched = 0
         for chunk in chunks[:3]:
             meta = chunk.get("metadata", {}) or {}
-            filename = meta.get("filename", "").lower()
             
-            if expected_prefix and expected_prefix not in filename:
-                mismatched += 1
+            # If we have a prefix to check, use filename validation
+            if expected_prefix:
+                filename = meta.get("filename", "").lower()
+                if expected_prefix not in filename:
+                    mismatched += 1
+            else:
+                # Otherwise, check metadata subject field directly
+                chunk_subject = meta.get("subject", "").lower()
+                if chunk_subject and expected_subject.lower() != chunk_subject:
+                    mismatched += 1
         
         # If majority of top chunks don't match, reject
         if mismatched >= 2:  # 2 out of 3
@@ -193,8 +225,40 @@ class PipelineService:
             Success or rejection response
         """
         logger.info(f"Processing query: '{query.question[:50]}...'")
+        logger.info(f"Class: {query.class_number}, Subject: {query.subject}, Language: {query.language}")
         
         try:
+            # Step 0: Load appropriate index for class
+            logger.debug(f"Step 0: Loading index for class {query.class_number}")
+            
+            # Try to load class-specific index
+            subject_key = query.subject.lower().replace(" ", "-").replace("and", "").strip("-")
+            
+            # For Class 10, try all-subjects index first (legacy structure)
+            if query.class_number == 10:
+                lang_suffix = 'hindi' if query.language == 'hi' else 'english'
+                class_load_success = self.faiss_service.load_index_for_class(
+                    "10",
+                    f"all-subjects-{lang_suffix}",
+                    query.language
+                )
+            else:
+                # For other classes, try subject-specific index
+                class_load_success = self.faiss_service.load_index_for_class(
+                    str(query.class_number),
+                    subject_key,
+                    'hi' if query.language == 'hi' else 'en'
+                )
+            
+            # Fallback to legacy index if class-specific not found
+            if not class_load_success:
+                logger.warning(f"Class {query.class_number} index not found, trying legacy fallback")
+                default_index = Path("vector_store/faiss_index")
+                if default_index.with_suffix('.index').exists():
+                    self.faiss_service.load_index(str(default_index))
+                else:
+                    logger.error("No index available for this class")
+            
             # Step 1: Embed question
             logger.debug("Step 1: Embedding question")
             query_embedding = self.embedding_service.encode_single(query.question)
@@ -210,6 +274,19 @@ class PipelineService:
             if retrieved_chunks:
                 top_score = retrieved_chunks[0].get('score', 0)
                 logger.info(f"Retrieved {len(retrieved_chunks)} chunks, top score: {top_score:.3f}")
+                
+                # Check if top score is too low (indicates wrong class/subject)
+                if top_score < 0.45:
+                    logger.warning(f"Low relevance score {top_score:.3f} - content may not match query class/subject")
+                    return RejectionResponse(
+                        reason=f"I don't have relevant information about this topic in Class {query.class_number} {query.subject}. Please verify you selected the correct class and subject.",
+                        rejection_type=RejectionReason.LOW_CONFIDENCE.value,
+                        metadata={
+                            "stage": "relevance_check",
+                            "top_score": top_score,
+                            "threshold": 0.45
+                        }
+                    )
             
             # Check if retrieved content matches the selected subject
             try:

@@ -56,19 +56,9 @@ async def startup_event():
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
     logger.info(f"Environment: {'Development' if settings.debug else 'Production'}")
     
-    # Load FAISS index if it exists
-    from app.services.faiss_service import faiss_service
-    
-    if faiss_service.index_exists():
-        logger.info("Loading existing FAISS index...")
-        try:
-            faiss_service.load_index()
-            logger.success("FAISS index loaded successfully")
-        except Exception as e:
-            logger.error(f"Failed to load FAISS index: {str(e)}")
-            logger.warning("System will need index to be built before queries can be processed")
-    else:
-        logger.warning("No existing FAISS index found. Run data processing script to build index.")
+    # Don't pre-load any index - let the pipeline load class-specific indices on demand
+    logger.info("Ready to load class-specific indices on demand")
+    logger.success("System initialized successfully")
 
 
 @app.on_event("shutdown")

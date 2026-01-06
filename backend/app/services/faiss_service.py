@@ -280,6 +280,74 @@ class FAISSService:
         except Exception as e:
             logger.error(f"Failed to load '{language}' index: {e}")
             return False
+    
+    def load_index_for_class(self, class_num: str, subject: str = None, language: str = 'en') -> bool:
+        """
+        Load FAISS index for specific class/subject/language combination
+        
+        Args:
+            class_num: Class number (e.g., '9', '10')
+            subject: Subject name (e.g., 'science', 'maths', None for all)
+            language: Language code ('en' or 'hi')
+        
+        Returns:
+            True if index loaded successfully
+        """
+        # Build index path
+        base_path = Path(settings.vector_store_dir) / f"class-{class_num}"
+        
+        if subject:
+            # Check if subject already includes language suffix (e.g., "all-subjects-hindi")
+            if subject.endswith('-english') or subject.endswith('-hindi'):
+                # Subject already has language, use as-is
+                index_path = base_path / subject / "faiss_index"
+            else:
+                # Append language code
+                index_path = base_path / f"{subject}-{language}" / "faiss_index"
+        else:
+            # Try to find any subject for this class
+            if not base_path.exists():
+                logger.warning(f"No indices found for class {class_num}")
+                return False
+            
+            # Get first available subject
+            subject_dirs = [d for d in base_path.iterdir() if d.is_dir() and d.name.endswith(f"-{language}")]
+            if not subject_dirs:
+                logger.warning(f"No {language} indices found for class {class_num}")
+                return False
+            
+            index_path = subject_dirs[0] / "faiss_index"
+        
+        if not self.index_exists(str(index_path)):
+            logger.warning(f"Index not found at {index_path}")
+            return False
+        
+        try:
+            # Load index files
+            index = faiss.read_index(str(index_path) + ".index")
+            
+            with open(str(index_path) + ".chunks.pkl", 'rb') as f:
+                chunks = pickle.load(f)
+            
+            # Set nprobe if IVF index
+            if isinstance(index, faiss.IndexIVFFlat):
+                index.nprobe = min(self.nprobe, getattr(index, 'nlist', self.nlist))
+            
+            # Store with class-specific key
+            key = f"class-{class_num}-{subject or 'all'}-{language}"
+            self.indexes[key] = index
+            self.chunks_by_lang[key] = chunks
+            
+            # Update legacy attributes
+            self.index = index
+            self.chunks = chunks
+            
+            logger.success(f"Loaded class {class_num} index: {len(chunks)} chunks from {index_path}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to load class {class_num} index: {e}")
+            return False
 
 
 # Global FAISS service instance

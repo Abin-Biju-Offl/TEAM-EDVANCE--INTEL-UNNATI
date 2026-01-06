@@ -47,19 +47,22 @@ class OCRService:
         logger.info(f"Starting OCR for: {pdf_path}")
         
         try:
-            # Convert PDF to images
-            images = convert_from_path(
-                pdf_path,
-                dpi=self.dpi,
-                fmt='jpeg'
-            )
-            
-            logger.info(f"Converted PDF to {len(images)} images")
+            # Open PDF with PyMuPDF
+            pdf_document = fitz.open(pdf_path)
+            total_pages = len(pdf_document)
+            logger.info(f"PDF has {total_pages} pages")
             
             # Extract text from each page
             pages_text = []
-            for page_num, image in enumerate(images, start=1):
+            for page_num in range(total_pages):
                 try:
+                    page = pdf_document[page_num]
+                    
+                    # Convert page to image
+                    pix = page.get_pixmap(dpi=self.dpi)
+                    img_bytes = pix.tobytes("png")
+                    image = Image.open(io.BytesIO(img_bytes))
+                    
                     # Run OCR on image
                     text = pytesseract.image_to_string(
                         image,
@@ -70,21 +73,23 @@ class OCRService:
                     extracted_page_num = self._extract_page_number_from_text(text)
                     
                     pages_text.append({
-                        'page_number': page_num,
+                        'page_number': page_num + 1,
                         'pdf_page_number': extracted_page_num,  # Actual page number from PDF
                         'text': text,
                         'char_count': len(text)
                     })
                     
-                    logger.debug(f"Page {page_num}: Extracted {len(text)} characters")
+                    logger.debug(f"Page {page_num + 1}: Extracted {len(text)} characters")
                     
                 except Exception as e:
-                    logger.error(f"OCR failed for page {page_num}: {str(e)}")
+                    logger.error(f"OCR failed for page {page_num + 1}: {str(e)}")
                     pages_text.append({
-                        'page_number': page_num,
+                        'page_number': page_num + 1,
                         'text': '',
                         'error': str(e)
                     })
+            
+            pdf_document.close()
             
             # Combine all pages
             full_text = "\n\n".join([p['text'] for p in pages_text if p.get('text')])
@@ -95,7 +100,7 @@ class OCRService:
             
             result = {
                 'pdf_path': pdf_path,
-                'total_pages': len(images),
+                'total_pages': total_pages,
                 'total_characters': len(full_text),
                 'full_text': full_text,
                 'pages': pages_text,
@@ -107,7 +112,7 @@ class OCRService:
                 }
             }
             
-            logger.success(f"OCR completed: {len(images)} pages, {len(full_text)} chars")
+            logger.success(f"OCR completed: {len(pages_text)} pages, {len(full_text)} chars")
             return result
             
         except Exception as e:
